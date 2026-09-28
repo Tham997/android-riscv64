@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-wrapper {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: #1a1a2e;
+            border: 3px solid #0f3460;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .scoreboard {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 10;
+            color: #00ff00;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .score {
+            text-align: center;
+            flex: 1;
+        }
+
+        .score-label {
+            font-size: 0.8em;
+            color: #00aa00;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                #00ff00 0px,
+                #00ff00 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            z-index: 1;
+        }
+
+        #paddle1 {
+            position: absolute;
+            left: 10px;
+            width: 10px;
+            height: 80px;
+            background: #ff006e;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #ff006e;
+            z-index: 5;
+        }
+
+        #paddle2 {
+            position: absolute;
+            right: 10px;
+            width: 10px;
+            height: 80px;
+            background: #00d9ff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00d9ff;
+            z-index: 5;
+        }
+
+        #ball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffff00;
+            z-index: 5;
+        }
+
+        .instructions {
+            color: white;
+            margin-top: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+        }
+
+        .controls-info {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            font-weight: bold;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px 50px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            color: #00ff00;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .game-over h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .game-over p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        .game-over button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background: #00ff00;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .game-over button:hover {
+            background: #00dd00;
+            box-shadow: 0 0 20px #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 PONG GAME</h1>
+        
+        <div class="game-wrapper">
+            <div class="center-line"></div>
+            <div class="scoreboard">
+                <div class="score">
+                    <span class="score-label">PLAYER</span>
+                    <div id="score1">0</div>
+                </div>
+                <div class="score">
+                    <span class="score-label">COMPUTER</span>
+                    <div id="score2">0</div>
+                </div>
+            </div>
+            
+            <div id="paddle1"></div>
+            <div id="paddle2"></div>
+            <div id="ball"></div>
+            
+            <div class="game-over" id="gameOver">
+                <h2 id="gameOverTitle">Game Over!</h2>
+                <p id="gameOverMessage"></p>
+                <button onclick="location.reload()">Play Again</button>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <p class="controls-info">🎮 CONTROLS:</p>
+            <p>Mouse: Move left paddle up/down</p>
+            <p>Arrow Keys: Control left paddle (↑ ↓)</p>
+            <p>Computer controls the right paddle automatically</p>
+            <p>First to 5 points wins!</p>
+        </div>
+    </div>
+
+    <script>
+        const gameWrapper = document.querySelector('.game-wrapper');
+        const ball = document.getElementById('ball');
+        const paddle1 = document.getElementById('paddle1');
+        const paddle2 = document.getElementById('paddle2');
+        const score1Display = document.getElementById('score1');
+        const score2Display = document.getElementById('score2');
+        const gameOverModal = document.getElementById('gameOver');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+
+        // Game constants
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 400;
+        const PADDLE_WIDTH = 10;
+        const PADDLE_HEIGHT = 80;
+        const BALL_SIZE = 10;
+        const PADDLE_SPEED = 6;
+        const COMPUTER_SPEED = 4;
+        const BALL_SPEED = 4;
+        const WIN_SCORE = 5;
+
+        // Game variables
+        let ballX = GAME_WIDTH / 2 - BALL_SIZE / 2;
+        let ballY = GAME_HEIGHT / 2 - BALL_SIZE / 2;
+        let ballSpeedX = BALL_SPEED;
+        let ballSpeedY = BALL_SPEED;
+        let paddle1Y = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+        let paddle2Y = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+        let score1 = 0;
+        let score2 = 0;
+        let gameActive = true;
+
+        // Input handling
+        const keys = {};
+        let mouseY = GAME_HEIGHT / 2;
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        gameWrapper.addEventListener('mousemove', (e) => {
+            const rect = gameWrapper.getBoundingClientRect();
+            mouseY = e.clientY - rect.top;
+        });
+
+        // Update game state
+        function update() {
+            if (!gameActive) return;
+
+            // Move ball
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Ball collision with top and bottom walls
+            if (ballY <= 0 || ballY + BALL_SIZE >= GAME_HEIGHT) {
+                ballSpeedY = -ballSpeedY;
+                ballY = Math.max(0, Math.min(ballY, GAME_HEIGHT - BALL_SIZE));
+            }
+
+            // Player paddle movement (mouse and arrow keys)
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                paddle1Y = Math.max(0, paddle1Y - PADDLE_SPEED);
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                paddle1Y = Math.min(GAME_HEIGHT - PADDLE_HEIGHT, paddle1Y + PADDLE_SPEED);
+            }
+
+            // Mouse control for player paddle
+            const targetY = mouseY - PADDLE_HEIGHT / 2;
+            if (Math.abs(paddle1Y - targetY) > 2) {
+                paddle1Y += (targetY - paddle1Y) * 0.15;
+            }
+            paddle1Y = Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, paddle1Y));
+
+            // Computer AI
+            const paddle2Center = paddle2Y + PADDLE_HEIGHT / 2;
+            const ballCenter = ballY + BALL_SIZE / 2;
+            const diff = ballCenter - paddle2Center;
+
+            if (diff > 10) {
+                paddle2Y = Math.min(GAME_HEIGHT - PADDLE_HEIGHT, paddle2Y + COMPUTER_SPEED);
+            } else if (diff < -10) {
+                paddle2Y = Math.max(0, paddle2Y - COMPUTER_SPEED);
+            }
+
+            // Ball collision with paddles
+            // Paddle 1 (left)
+            if (
+                ballX < paddle1.offsetLeft + PADDLE_WIDTH &&
+                ballX + BALL_SIZE > paddle1.offsetLeft &&
+                ballY < paddle1Y + PADDLE_HEIGHT &&
+                ballY + BALL_SIZE > paddle1Y
+            ) {
+                ballSpeedX = -ballSpeedX;
+                ballX = paddle1.offsetLeft + PADDLE_WIDTH;
+                
+                // Add spin based on where the ball hits the paddle
+                const hitPos = (ballY - paddle1Y) / PADDLE_HEIGHT;
+                ballSpeedY += (hitPos - 0.5) * 4;
+            }
+
+            // Paddle 2 (right)
+            if (
+                ballX + BALL_SIZE > paddle2.offsetLeft &&
+                ballX < paddle2.offsetLeft + PADDLE_WIDTH &&
+                ballY < paddle2Y + PADDLE_HEIGHT &&
+                ballY + BALL_SIZE > paddle2Y
+            ) {
+                ballSpeedX = -ballSpeedX;
+                ballX = paddle2.offsetLeft - BALL_SIZE;
+                
+                // Add spin based on where the ball hits the paddle
+                const hitPos = (ballY - paddle2Y) / PADDLE_HEIGHT;
+                ballSpeedY += (hitPos - 0.5) * 4;
+            }
+
+            // Ball out of bounds - scoring
+            if (ballX < 0) {
+                score2++;
+                resetBall();
+                checkWinCondition();
+            } else if (ballX > GAME_WIDTH) {
+                score1++;
+                resetBall();
+                checkWinCondition();
+            }
+
+            // Update score display
+            score1Display.textContent = score1;
+            score2Display.textContent = score2;
+        }
+
+        function resetBall() {
+            ballX = GAME_WIDTH / 2 - BALL_SIZE / 2;
+            ballY = GAME_HEIGHT / 2 - BALL_SIZE / 2;
+            ballSpeedX = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
+            ballSpeedY = BALL_SPEED * (Math.random() - 0.5) * 2;
+        }
+
+        function checkWinCondition() {
+            if (score1 >= WIN_SCORE) {
+                endGame('🎉 YOU WIN!', `Final Score: ${score1} - ${score2}`);
+            } else if (score2 >= WIN_SCORE) {
+                endGame('💻 COMPUTER WINS!', `Final Score: ${score1} - ${score2}`);
+            }
+        }
+
+        function endGame(title, message) {
+            gameActive = false;
+            gameOverTitle.textContent = title;
+            gameOverMessage.textContent = message;
+            gameOverModal.style.display = 'block';
+        }
+
+        // Render game state
+        function render() {
+            ball.style.left = ballX + 'px';
+            ball.style.top = ballY + 'px';
+            paddle1.style.top = paddle1Y + 'px';
+            paddle2.style.top = paddle2Y + 'px';
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
