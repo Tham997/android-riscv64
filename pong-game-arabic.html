@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لعبة بونج - ابو حامد</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      font-family: 'Arial', sans-serif;
+      color: white;
+    }
+
+    .game-shell {
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 12px;
+      letter-spacing: 2px;
+      font-size: 2rem;
+    }
+
+    .player-names {
+      display: flex;
+      justify-content: space-between;
+      width: 800px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: #a0aec0;
+    }
+
+    #scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      font-size: 1.6rem;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+
+    #game-board {
+      position: relative;
+      width: 800px;
+      height: 400px;
+      background: #000;
+      border: 4px solid white;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+      overflow: hidden;
+    }
+
+    .paddle {
+      position: absolute;
+      width: 12px;
+      height: 90px;
+      border-radius: 6px;
+      background: white;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+
+    #left-paddle { 
+      left: 12px; 
+      top: 155px;
+      background: linear-gradient(to right, #60a5fa, #3b82f6);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+    }
+
+    #right-paddle { 
+      right: 12px; 
+      top: 155px;
+      background: linear-gradient(to left, #f87171, #dc2626);
+      box-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+    }
+
+    .ball {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #fbbf24;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+    }
+
+    .center-line {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      transform: translateX(-50%);
+      background: repeating-linear-gradient(
+        to bottom,
+        white 0,
+        white 14px,
+        transparent 14px,
+        transparent 28px
+      );
+    }
+
+    .instructions {
+      margin-top: 12px;
+      color: #d1d5db;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .music-controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #2563eb;
+      transform: scale(1.05);
+    }
+
+    .difficulty-control {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .difficulty-control label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .game-status {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #60a5fa;
+      height: 20px;
+    }
+
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <h1>🎮 لعبة البونج 🎮</h1>
+    <h2 style="font-size: 1.2rem; margin-top: -5px;">بطل أبو حامد</h2>
+
+    <div class="player-names">
+      <div>👤 أنت</div>
+      <div>🤖 أبو حامد</div>
+    </div>
+
+    <div id="scoreboard">
+      <div>أنت: <span id="player-score">0</span></div>
+      <div>أبو حامد: <span id="computer-score">0</span></div>
+    </div>
+
+    <div id="game-board">
+      <div class="center-line"></div>
+      <div id="left-paddle" class="paddle"></div>
+      <div id="right-paddle" class="paddle"></div>
+      <div id="ball" class="ball"></div>
+    </div>
+
+    <div class="difficulty-control">
+      <label>
+        <input type="radio" name="difficulty" value="easy" /> سهل
+      </label>
+      <label>
+        <input type="radio" name="difficulty" value="medium" checked /> متوسط
+      </label>
+      <label>
+        <input type="radio" name="difficulty" value="hard" /> صعب
+      </label>
+    </div>
+
+    <div class="instructions">
+      استخدم الفأرة أو أسهم لوحة المفاتيح (⬆️⬇️) للتحكم بالمجداف الأيسر<br>
+      أول من يصل إلى 5 نقاط يفوز!
+    </div>
+
+    <div class="music-controls">
+      <button id="music-toggle">🎵 تشغيل الموسيقى</button>
+      <button id="music-volume">🔊 مستوى الصوت</button>
+    </div>
+
+    <div class="game-status" id="game-status"></div>
+
+    <audio id="background-music" loop>
+      <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+
+  <script>
+    const boardWidth = 800;
+    const boardHeight = 400;
+    const paddleWidth = 12;
+    const paddleHeight = 90;
+    const ballSize = 12;
+    const paddleSpeed = 6;
+    const maxScore = 5;
+
+    const leftPaddleEl = document.getElementById('left-paddle');
+    const rightPaddleEl = document.getElementById('right-paddle');
+    const ballEl = document.getElementById('ball');
+    const playerScoreEl = document.getElementById('player-score');
+    const computerScoreEl = document.getElementById('computer-score');
+    const difficultyRadios = document.querySelectorAll('input[name="difficulty"]');
+    const musicToggleBtn = document.getElementById('music-toggle');
+    const musicVolumeBtn = document.getElementById('music-volume');
+    const backgroundMusic = document.getElementById('background-music');
+    const gameStatus = document.getElementById('game-status');
+
+    let difficulty = 'medium';
+    let musicPlaying = false;
+    let musicVolume = 0.5;
+
+    const state = {
+      leftPaddle: { x: 12, y: 155, width: paddleWidth, height: paddleHeight },
+      rightPaddle: { x: boardWidth - 12 - paddleWidth, y: 155, width: paddleWidth, height: paddleHeight },
+      ball: { x: boardWidth / 2 - ballSize / 2, y: boardHeight / 2 - ballSize / 2, size: ballSize, dx: 4, dy: 4 },
+      playerScore: 0,
+      computerScore: 0,
+      keys: { up: false, down: false },
+      running: true,
+      ballHitCount: 0
+    };
+
+    musicToggleBtn.addEventListener('click', () => {
+      if (musicPlaying) {
+        backgroundMusic.pause();
+        musicToggleBtn.textContent = '🎵 تشغيل الموسيقى';
+        musicPlaying = false;
+      } else {
+        backgroundMusic.play().catch(err => {
+          console.log('Could not play audio:', err);
+          gameStatus.textContent = '⚠️ لا يمكن تشغيل الموسيقى';
+        });
+        musicToggleBtn.textContent = '⏸️ إيقاف الموسيقى';
+        musicPlaying = true;
+      }
+    });
+
+    musicVolumeBtn.addEventListener('click', () => {
+      musicVolume = musicVolume === 0.5 ? 1 : 0.3;
+      backgroundMusic.volume = musicVolume;
+      const volumeText = musicVolume === 1 ? '🔊🔊 مرتفع' : '🔉 منخفض';
+      musicVolumeBtn.textContent = volumeText;
+    });
+
+    difficultyRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        difficulty = e.target.value;
+        gameStatus.textContent = `📊 المستوى: ${difficulty === 'easy' ? 'سهل' : difficulty === 'medium' ? 'متوسط' : 'صعب'}`;
+        setTimeout(() => gameStatus.textContent = '', 2000);
+      });
+    });
+
+    function updateScores() {
+      playerScoreEl.textContent = String(state.playerScore);
+      computerScoreEl.textContent = String(state.computerScore);
+    }
+
+    function resetBall(direction = 1) {
+      state.ball.x = boardWidth / 2 - state.ball.size / 2;
+      state.ball.y = boardHeight / 2 - state.ball.size / 2;
+      state.ball.dx = 4 * direction;
+      state.ball.dy = (Math.random() * 2 - 1) * 4;
+      state.ballHitCount = 0;
+    }
+
+    function handleWallCollision() {
+      if (state.ball.y <= 0 || state.ball.y + state.ball.size >= boardHeight) {
+        state.ball.dy *= -1;
+        state.ball.y = Math.max(0, Math.min(state.ball.y, boardHeight - state.ball.size));
+      }
+    }
+
+    function handlePaddleCollision() {
+      const leftHit =
+        state.ball.x <= state.leftPaddle.x + state.leftPaddle.width &&
+        state.ball.x + state.ball.size >= state.leftPaddle.x &&
+        state.ball.y + state.ball.size >= state.leftPaddle.y &&
+        state.ball.y <= state.leftPaddle.y + state.leftPaddle.height;
+
+      const rightHit =
+        state.ball.x + state.ball.size >= state.rightPaddle.x &&
+        state.ball.x <= state.rightPaddle.x + state.rightPaddle.width &&
+        state.ball.y + state.ball.size >= state.rightPaddle.y &&
+        state.ball.y <= state.rightPaddle.y + state.rightPaddle.height;
+
+      if (leftHit) {
+        state.ball.x = state.leftPaddle.x + state.leftPaddle.width;
+        state.ball.dx = Math.abs(state.ball.dx);
+        const hitPos = (state.ball.y + state.ball.size / 2 - (state.leftPaddle.y + state.leftPaddle.height / 2)) / (state.leftPaddle.height / 2);
+        state.ball.dy += hitPos * state.ball.dx * 0.3;
+        state.ballHitCount++;
+      }
+
+      if (rightHit) {
+        state.ball.x = state.rightPaddle.x - state.ball.size;
+        state.ball.dx = -Math.abs(state.ball.dx);
+        const hitPos = (state.ball.y + state.ball.size / 2 - (state.rightPaddle.y + state.rightPaddle.height / 2)) / (state.rightPaddle.height / 2);
+        state.ball.dy += hitPos * state.ball.dx * 0.3;
+        state.ballHitCount++;
+      }
+    }
+
+    function scorePoint() {
+      if (state.ball.x < 0) {
+        state.computerScore += 1;
+        updateScores();
+        if (state.computerScore >= maxScore) {
+          state.running = false;
+          gameStatus.textContent = '🎉 أبو حامد ينتصر! برافو يا أبو حامد! 🎉';
+          return;
+        }
+        resetBall(1);
+      }
+
+      if (state.ball.x + state.ball.size > boardWidth) {
+        state.playerScore += 1;
+        updateScores();
+        if (state.playerScore >= maxScore) {
+          state.running = false;
+          gameStatus.textContent = '🏆 أنت تفوز! ممتاز! 🏆';
+          return;
+        }
+        resetBall(-1);
+      }
+    }
+
+    function updateLeftPaddle() {
+      if (state.keys.up) {
+        state.leftPaddle.y = Math.max(0, state.leftPaddle.y - paddleSpeed);
+      }
+      if (state.keys.down) {
+        state.leftPaddle.y = Math.min(boardHeight - state.leftPaddle.height, state.leftPaddle.y + paddleSpeed);
+      }
+    }
+
+    function updateRightPaddle() {
+      const ballCenterY = state.ball.y + state.ball.size / 2;
+      const paddleCenterY = state.rightPaddle.y + state.rightPaddle.height / 2;
+      let targetY = ballCenterY;
+      let predictedY = state.ball.y;
+      let predictedDy = state.ball.dy;
+      let predictedDx = state.ball.dx;
+
+      if (predictedDx > 0) {
+        const timeToReach = (state.rightPaddle.x - state.ball.x) / predictedDx;
+        predictedY = state.ball.y + predictedDy * timeToReach;
+
+        while (predictedY < 0 || predictedY > boardHeight) {
+          if (predictedY < 0) {
+            predictedY = -predictedY;
+            predictedDy = -predictedDy;
+          } else if (predictedY > boardHeight) {
+            predictedY = 2 * boardHeight - predictedY;
+            predictedDy = -predictedDy;
+          }
+        }
+        targetY = predictedY;
+      }
+
+      let aiSpeed = paddleSpeed;
+      let difficultyMult = 1;
+
+      if (difficulty === 'easy') {
+        aiSpeed = 3;
+        difficultyMult = 0.7;
+      } else if (difficulty === 'medium') {
+        aiSpeed = 5;
+        difficultyMult = 0.85;
+      } else if (difficulty === 'hard') {
+        aiSpeed = 7;
+        difficultyMult = 1;
+      }
+
+      targetY += (Math.random() - 0.5) * 20 * (2 - difficultyMult);
+
+      const diff = targetY - paddleCenterY;
+      const moveAmount = Math.sign(diff) * Math.min(aiSpeed, Math.abs(diff));
+      state.rightPaddle.y += moveAmount * difficultyMult;
+      state.rightPaddle.y = Math.max(0, Math.min(boardHeight - state.rightPaddle.height, state.rightPaddle.y));
+    }
+
+    function updateBall() {
+      state.ball.x += state.ball.dx;
+      state.ball.y += state.ball.dy;
+
+      if (state.ballHitCount > 5) {
+        const speedIncrease = 1 + (state.ballHitCount - 5) * 0.02;
+        state.ball.dx *= Math.min(speedIncrease, 1.2);
+        state.ball.dy *= Math.min(speedIncrease, 1.2);
+      }
+
+      handleWallCollision();
+      handlePaddleCollision();
+      scorePoint();
+    }
+
+    function render() {
+      leftPaddleEl.style.top = `${state.leftPaddle.y}px`;
+      rightPaddleEl.style.top = `${state.rightPaddle.y}px`;
+      ballEl.style.left = `${state.ball.x}px`;
+      ballEl.style.top = `${state.ball.y}px`;
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp') state.keys.up = true;
+      if (event.key === 'ArrowDown') state.keys.down = true;
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.key === 'ArrowUp') state.keys.up = false;
+      if (event.key === 'ArrowDown') state.keys.down = false;
+    });
+
+    document.addEventListener('mousemove', (event) => {
+      const boardRect = document.getElementById('game-board').getBoundingClientRect();
+      const mouseY = event.clientY - boardRect.top;
+      state.leftPaddle.y = Math.max(0, Math.min(boardHeight - state.leftPaddle.height, mouseY - state.leftPaddle.height / 2));
+    });
+
+    function gameLoop() {
+      if (state.running) {
+        updateLeftPaddle();
+        updateRightPaddle();
+        updateBall();
+      }
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    backgroundMusic.volume = musicVolume;
+    resetBall(1);
+    updateScores();
+    gameLoop();
+    gameStatus.textContent = '📊 المستوى: متوسط';
+    setTimeout(() => gameStatus.textContent = '', 2000);
+  </script>
+</body>
+</html>
